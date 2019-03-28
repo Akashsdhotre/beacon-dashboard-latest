@@ -1,0 +1,20 @@
+ let dataSet = [
+ {
+    "name":    "Tiger Nixon",
+    "position":   "System Architect",
+    "salary":    "$3,120",
+    "start_date": "2011/04/25",
+    "office":    "Edinburgh",
+    "extn":    "5421"
+},
+{
+    "name":    "Tiger Nixon",
+    "position":   "System Architect",
+    "salary":    "$3,120",
+    "start_date": "2011/04/25",
+    "office":    "Edinburgh",
+    "extn":    "5421"
+}
+];
+
+export default dataSet;
