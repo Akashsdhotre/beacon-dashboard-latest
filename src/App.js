@@ -5,8 +5,6 @@ import Dashboard from './dashboard/index'
 import Login from './dashboard/login/index'
 import Home from './common/Home'
 
-
-
 class App extends Component {
   render() {
     return (
