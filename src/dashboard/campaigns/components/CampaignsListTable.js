@@ -2,7 +2,7 @@ import React from 'react'
 import ReactTable from "react-table";
 import 'react-table/react-table.css'
 // import axios from 'axios'
-import moment from 'moment'
+// import moment from 'moment'
 import { withRouter } from "react-router";
 import { Button } from 'react-bootstrap';
 
@@ -25,6 +25,12 @@ class CampaignsListTable extends React.Component{
 	componentDidMount(){
 		this.fetchData()
 		// console.log(moment("2019-02-01T11:00:00.000Z").format('MM/DD/YYYY'));
+		var str = "2019-02-01T11:00:00.000Z";
+		var res = str.split("T");
+		var res1 = res[1].split(":");
+		console.log(res1[0]+":"+res1[1]);
+		// var mydate = new Date('18:00:00.000Z');
+		// console.log("TIME==",moment('18:00:00.000Z').format('LT'))
 	}
 
 
@@ -80,9 +86,6 @@ class CampaignsListTable extends React.Component{
 
 	render(){
 
-		const { data } = this.state
-		const item = data[this.state.requiredItem];
-
 		const columns = [
 			{
 				Header: "Campaign Name",
@@ -124,7 +127,7 @@ class CampaignsListTable extends React.Component{
 								
 							}
 							else{
-						  	txt = txt + value.name + "<hr/> "; 
+						  	txt = txt + value.name + "<hr/> ";                                         
 
 							}
 

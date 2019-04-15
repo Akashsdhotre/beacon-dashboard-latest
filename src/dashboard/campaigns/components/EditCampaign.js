@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import renderHTML from 'react-render-html';
+// import renderHTML from 'react-render-html';
 import Option from './Option';
 import moment from 'moment';
 
@@ -8,6 +8,7 @@ class EditCampaign extends Component {
     super(props);
     this.state = {
     	advertiseData:[],
+    	campaignData:[],
 			campaignTitle:"",
 			advertiseId: "",
 			startDate: "",
@@ -25,15 +26,17 @@ class EditCampaign extends Component {
 			weekDays:[],
 			checkedName:"",
 			gender: "",
-			minAge: "",
-			maxAge: ""
+			minAge: 0,
+			maxAge: 0
 
 
 		}
-    this.fetchData = this.fetchData.bind(this);
-    this.fetchAdvertiseData = this.fetchAdvertiseData.bind(this);
-    this.setDays = this.setDays.bind(this)
-    
+    this.fetchCampaignDetails = this.fetchCampaignDetails.bind(this);
+    this.fetchAdvertiseList = this.fetchAdvertiseList.bind(this);
+    this.fetchAdvertiseName = this.fetchAdvertiseName.bind(this);
+    this.convertDays = this.convertDays.bind(this)
+    this.convertTime = this.convertTime.bind(this)
+ 
 		this.handleChange = this.handleChange.bind(this)
 		this.handleSubmit = this.handleSubmit.bind(this)
 
@@ -41,19 +44,19 @@ class EditCampaign extends Component {
 
   componentDidMount(){
 
-  	console.log("campaignId in edit",this.props.match.params.id)
-    this.fetchData()
-    this.fetchAdvertiseData()
-    this.setDays()
+  	// console.log("campaignId in edit",this.props.match.params.id)
+    this.fetchCampaignDetails()
+    this.fetchAdvertiseList()
+    // this.fetchAdvertiseName()
   }
 
-  fetchData() {
+  fetchCampaignDetails() {
 
     const id = localStorage.getItem("id");
     const token = localStorage.getItem("token");
     const campaignId = this.props.match.params.id;
 
-    console.log("campaignId",campaignId)
+    // console.log("campaignId",campaignId)
 
     fetch('https://beacon-appl.herokuapp.com/campaignDetails', {
       method: 'POST',
@@ -73,11 +76,37 @@ class EditCampaign extends Component {
 
       if(responseJson.success === true){
 
-        console.log(responseJson)
         var days = responseJson.data[0].schedule.daysOfWeek
-        console.log("days",days)
 
-        for(var i=0;i<days.length;i++) {
+        this.convertDays(days);
+        this.convertTime(responseJson.data[0].schedule.startTime,"start");
+        this.convertTime(responseJson.data[0].schedule.endTime,"end");
+
+        this.setState({
+         
+          campaignData:responseJson.data[0],
+          advertiseId:responseJson.data[0].advertisementId,
+          startDate: moment(responseJson.data[0].schedule.startDate).format('YYYY-MM-DD').toString(),
+          endDate: moment(responseJson.data[0].schedule.endDate).format('YYYY-MM-DD').toString(),
+          minAge:responseJson.data[0].targetAge.minage,
+          maxAge:responseJson.data[0].targetAge.maxage,
+          campaignTitle:responseJson.data[0].campaignTitle,
+          gender:responseJson.data[0].gender
+        });
+
+      }
+      else{
+        alert("edit campaign not done..")
+      }
+    })
+    .catch((error) => {
+      alert("Internal server error fetch..")
+    });
+
+  }
+
+  convertDays(days){
+  	 for(var i=0;i<days.length;i++) {
   				if(days[i] === "monday"){
   					this.setState({monday: true})
   				}
@@ -99,33 +128,31 @@ class EditCampaign extends Component {
   				else{
   					this.setState({sunday: true})
   				}
-				}
-
-        this.setState({
-         
-          startTime: moment(responseJson.data[0].schedule.startTime).format('HH:mm').toString(),
-          endTime: moment(responseJson.data[0].schedule.endTime).format('HH:mm').toString(),
-          startDate: moment(responseJson.data[0].schedule.startDate).format('YYYY-MM-DD').toString(),
-          endDate: moment(responseJson.data[0].schedule.endDate).format('YYYY-MM-DD').toString(),
-
-          minAge:responseJson.data[0].targetAge.minage,
-          maxAge:responseJson.data[0].targetAge.maxage,
-          campaignTitle:responseJson.data[0].campaignTitle,
-          gender:responseJson.data[0].gender
-        });
-
-      }
-      else{
-        alert("edit campaign not done..")
-      }
-    })
-    .catch((error) => {
-      alert("Internal server error fetch..")
-    });
-
+			}
   }
 
-  fetchAdvertiseData(){
+  convertTime(timeString,time){
+  	if(time === "start"){
+			let res = timeString.split("T");
+			let res1 = res[1].split(":");
+			console.log(res1[0]+":"+res1[1]);
+			let result = res1[0]+":"+res1[1];
+			this.setState({
+				startTime:result
+			})
+  	}
+  	else{
+  		let res = timeString.split("T");
+			let res1 = res[1].split(":");
+			console.log(res1[0]+":"+res1[1]);
+			let result = res1[0]+":"+res1[1];
+				this.setState({
+				endTime:result
+			})
+  	}
+  }
+
+  fetchAdvertiseList(){
 		const id = localStorage.getItem("id");
 		const token = localStorage.getItem("token");
 
@@ -144,8 +171,10 @@ class EditCampaign extends Component {
 		})
 		.then((response) => response.json())
 		.then((responseJson) => {
+
+			 console.log("Advertisement list response=",responseJson)
+
 		  if(responseJson.success === true){
-		  console.log(responseJson)
 		  this.setState({
 		  	advertiseData: responseJson.data
 		  })
@@ -154,6 +183,11 @@ class EditCampaign extends Component {
 		  else{
 				alert("Advertisement data not found")
 		  }
+
+		  // console.log("In Name advertiseData=",this.state.advertiseData);
+		  // console.log("In Name campaignData=",this.state.campaignData);
+		  this.fetchAdvertiseName(this.state)
+
 		})
 		.catch((error) => {
 			console.error(error)
@@ -161,9 +195,13 @@ class EditCampaign extends Component {
 		});
 	}
 
-	setDays(){
-		console.log("weekdays in setDays",this.state.weekDays)
+	fetchAdvertiseName(data){
+		const { advertiseData , campaignData } = data
+	 console.log("advertiseData=",advertiseData)
+	 console.log("campaignData=",campaignData)
+
 	}
+
 
 handleChange(event){
 
@@ -174,12 +212,11 @@ handleChange(event){
 	}
 
 	handleSubmit(e){
-		console.log("e",e)
+		// console.log("e",e)
 		e.preventDefault();
-		console.log("clicked")
-		console.log("value",this.state)
-		console.log("id",this.state.advertiseId);
-		const {campaignTitle,advertiseId,startDate,endDate,startTime,endTime,gender,minAge,maxAge,checkedName} = this.state
+		document.getElementById("cover-spin").style.display = "block";
+
+		const {campaignTitle,advertiseId,startDate,endDate,startTime,endTime,gender,minAge,maxAge} = this.state
 		const {allDays,monday,tuesday,wednesday,thursday,friday,saturday,sunday} = this.state
 		const id = localStorage.getItem("id");
 		const token = localStorage.getItem("token");
@@ -215,19 +252,19 @@ handleChange(event){
 			weekDays.push("sunday")
 		}
 
-		console.log("id",id)
-		console.log("token",token)
-		console.log("weekDays",weekDays)
-		console.log("campaignTitle",campaignTitle)
-		console.log("advertiseId",advertiseId)
-		console.log("startDate",sDate)
-		console.log("endDate",eDate)
-		console.log("startTime",startTime)
-		console.log("endTime",endTime)
-		console.log("gender",gender)
-		console.log("minAge",minAge)
-		console.log("maxAge",maxAge)
-		console.log("checkedName",checkedName)
+		// console.log("id",id)
+		// console.log("token",token)
+		// console.log("weekDays",weekDays)
+		// console.log("campaignTitle",campaignTitle)
+		// console.log("advertiseId",advertiseId)
+		// console.log("startDate",sDate)
+		// console.log("endDate",eDate)
+		// console.log("startTime",startTime)
+		// console.log("endTime",endTime)
+		// console.log("gender",gender)
+		// console.log("minAge",minAge)
+		// console.log("maxAge",maxAge)
+		// console.log("checkedName",checkedName)
 
 
 		if (gender === "") {
@@ -236,7 +273,7 @@ handleChange(event){
 				
 		}
 		else{
-			console.log("ready for api call")
+			// console.log("ready for api call")
 
 			fetch('https://beacon-appl.herokuapp.com/update_campaign', {
 				method: 'POST',
@@ -264,8 +301,9 @@ handleChange(event){
 			})
 			.then((response) => response.json())
 			.then((responseJson) => {
-				console.log(responseJson)	
+				console.log("update campaign response=",responseJson)	
 				if(responseJson.success === true){
+					 document.getElementById("cover-spin").style.display = "none";
 					alert("Campaign Updated..")
 					// this.props.history.push('/dashboard/campaigns/campaignsList')
 				}
@@ -281,14 +319,9 @@ handleChange(event){
 
   render() {
 
-  	console.log("Edit campaign Data",this.state)
   	const { advertiseData } = this.state
 
-		console.log("in render",advertiseData)
-
 		const advertises = advertiseData.map(item => <Option key={item.advertisementId} item={item} />)
-
-  
 
     return (
 
@@ -298,12 +331,19 @@ handleChange(event){
 					<div className="col-3"></div>
 					<div className="col-md-6">
 
+						<div id="cover-spin"></div>
 						<form>
 
 							<div className="form-group">
 						    <label className="font-weight-bold">Campaign Title:</label>
-						    <input type="text" className="form-control"
-						      name="campaignTitle" onChange={this.handleChange} value={this.state.campaignTitle} required/>
+						    <input 
+						    	type="text" 
+						    	className="form-control"
+						      name="campaignTitle"
+						      onChange={this.handleChange} 
+						      value={this.state.campaignTitle} 
+						      required
+						    />
 						  </div>
 
 							<div className="form-group">
@@ -326,22 +366,49 @@ handleChange(event){
 						  <div className="form-group">
 						    <label className="font-weight-bold">Schedule Date:</label>
 						    <div className="form-inline">
-						      <input type="date" className="form-control"
-						      name="startDate" onChange={this.handleChange} value={this.state.startDate} required/>
+
+						      <input 
+						      	type="date" 
+						      	className="form-control"
+						      	name="startDate" 
+						      	onChange={this.handleChange} 
+						      	value={this.state.startDate}  
+						      	required
+						      />
+
 						       <label className="labelDecor font-weight-bold ">to</label>
-						      <input type="date" className="form-control"
-						      name="endDate" onChange={this.handleChange} value={this.state.endDate} required/>
+
+						      <input 
+						      	type="date" 
+						      	className="form-control"
+						      	name="endDate"
+						       	onChange={this.handleChange}
+						        value={this.state.endDate}
+						        required
+						      />
 						    </div>
 						  </div>
 
 						 	<div className="form-group">
 						    <label className="font-weight-bold">Schedule Time:</label>
 						    <div className="form-inline">
-						      <input type="time" className="form-control"
-						      name="startTime" onChange={this.handleChange} value={this.state.startTime} required/>
+						      <input 
+							      type="time" 
+							      className="form-control"
+							      name="startTime" 
+							      onChange={this.handleChange} 
+							      value={this.state.startTime} 
+							      required
+						      />
 						      <label className="labelDecor font-weight-bold">to</label>
-						      <input type="time" className="form-control"
-						      name="endTime" onChange={this.handleChange} value={this.state.endTime} required/>
+						      <input 
+							      type="time" 
+							      className="form-control"
+							      name="endTime" 
+							      onChange={this.handleChange} 
+							      value={this.state.endTime} 
+							      required
+						      />
 						    </div>
 						  </div>
 
@@ -349,51 +416,75 @@ handleChange(event){
 						    <label className="font-weight-bold" htmlFor="schedule-days">Schedule Days:</label>
 						    <div className="col-sm-10 form-inline">
 
-						      <input type="checkbox"
-						      name="allDays" onChange={this.handleChange} checked={this.state.allDays}/>
+						      <input 
+							      type="checkbox"
+							      name="allDays" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays}
+						      />
 						      <label className="labelDecor">All Days</label>
 
-						      <input type="checkbox"
-						      name="monday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.monday}
-						      disabled={this.state.allDays ? true : false}
+						      <input 
+							      type="checkbox"
+							      name="monday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.monday}
+							      disabled={this.state.allDays ? true : false}
 						      />
 						      <label className="labelDecor">Mo</label>
 
-						      <input type="checkbox"
-						      name="tuesday" onChange={this.handleChange}
-						      checked={this.state.allDays ? false : this.state.tuesday}
-						      disabled={this.state.allDays ? true : false}/>
+						      <input 
+							      type="checkbox"
+							      name="tuesday" 
+							      onChange={this.handleChange}
+							      checked={this.state.allDays ? false : this.state.tuesday}
+							      disabled={this.state.allDays ? true : false}
+						      />
 						      <label className="labelDecor">Tu</label>
 
-						      <input type="checkbox" 
-						      name="wednesday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.wednesday}
-						      disabled={this.state.allDays ? true : false}/>
+						      <input 
+							      type="checkbox" 
+							      name="wednesday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.wednesday}
+							      disabled={this.state.allDays ? true : false}
+						      />
 						      <label className="labelDecor">We</label>
 
-						      <input type="checkbox"
-						      name="thursday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.thursday}
-						      disabled={this.state.allDays ? true : false} />
+						      <input 
+							      type="checkbox"
+							      name="thursday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.thursday}
+							      disabled={this.state.allDays ? true : false} 
+						      />
 						      <label className="labelDecor">Th</label>
 
-						      <input type="checkbox" 
-						      name="friday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.friday} 
-						      disabled={this.state.allDays ? true : false}/>
+						      <input 
+							      type="checkbox" 
+							      name="friday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.friday} 
+							      disabled={this.state.allDays ? true : false}
+						      />
 						      <label className="labelDecor">Fr</label>
 
-						      <input type="checkbox"
-						      name="saturday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.saturday}  
-						      disabled={this.state.allDays ? true : false}/>
+						      <input 
+							      type="checkbox"
+							      name="saturday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.saturday}  
+							      disabled={this.state.allDays ? true : false}
+						      />
 						      <label className="labelDecor">Sa</label>
 
-						      <input type="checkbox" 
-						      name="sunday" onChange={this.handleChange} 
-						      checked={this.state.allDays ? false : this.state.sunday} 
-						      disabled={this.state.allDays ? true : false}/>
+						      <input 
+							      type="checkbox" 
+							      name="sunday" 
+							      onChange={this.handleChange} 
+							      checked={this.state.allDays ? false : this.state.sunday} 
+							      disabled={this.state.allDays ? true : false}
+						      />
 						      <label className="labelDecor">Su</label>
 
 
@@ -404,19 +495,30 @@ handleChange(event){
 						    <label className="font-weight-bold">Gender:</label>
 						    <div className="col-sm-10 form-inline">
 
-						      <input type="radio"
-						       name="gender" onChange={this.handleChange} value="any"
-						       checked={this.state.gender === "any"} />
+						      <input 
+							      type="radio"
+							      name="gender" 
+							      onChange={this.handleChange} 
+							      value="any"
+							      checked={this.state.gender === "any"} 
+						       />
 						      <label className="labelDecor">Any</label>
 
-						      <input type="radio"
-						       name="gender" onChange={this.handleChange} value="male"
-						       checked={this.state.gender === "male"} />
+						      <input 
+						      	type="radio"
+						       	name="gender" 
+						       	onChange={this.handleChange} value="male"
+						       	checked={this.state.gender === "male"} 
+						      />
 						      <label className="labelDecor">Male</label>
 
-						      <input type="radio"
-						       name="gender" onChange={this.handleChange} value="female"
-						       checked={this.state.gender === "female"} />
+						      <input 
+						      	type="radio"
+						       	name="gender" 
+						       	onChange={this.handleChange} 
+						       	value="female"
+						       	checked={this.state.gender === "female"} 
+						      />
 						      <label className="labelDecor">Female</label>
 
 						    </div>
@@ -425,12 +527,28 @@ handleChange(event){
 							<div className="form-group">
 						    <label className="font-weight-bold" htmlFor="schedule-time">Age Group:</label>
 						    <div className="col-sm-10 form-inline">
-						      <input type="number" className="form-control"
-						      name="minAge" onChange={this.handleChange} value={this.state.minAge} required/>
+
+						      <input 
+							      type="number" 
+							      className="form-control"
+							      name="minAge" 
+							      onChange={this.handleChange} 
+							      value={this.state.minAge} 
+							      required
+						      />
+
 						      <label className="labelDecor font-weight-bold">to</label>
-						      <input type="number" className="form-control"
-						      name="maxAge" onChange={this.handleChange} value={this.state.maxAge} required/>
-						    </div>
+
+						      <input 
+							      type="number" 
+							      className="form-control"
+							      name="maxAge" 
+							      onChange={this.handleChange} 
+							      value={this.state.maxAge} 
+							      required
+						      />
+						    	</div>
+
 						  </div>
 						  <br/><br/>
 						  <div className="form-group"> 

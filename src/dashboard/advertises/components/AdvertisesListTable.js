@@ -3,7 +3,7 @@ import ReactTable from "react-table";
 import 'react-table/react-table.css'
 import { withRouter } from "react-router";
 import { Button } from 'react-bootstrap';
-import EditAdvertise from './EditAdvertise'
+// import EditAdvertise from './EditAdvertise'
 
 
 

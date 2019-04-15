@@ -87,6 +87,7 @@ class AddCampaign extends React.Component{
 	handleSubmit(e){
 		console.log("e",e)
 		e.preventDefault();
+		 document.getElementById("cover-spin").style.display = "block";
 		console.log("clicked")
 		console.log("value",this.state)
 		console.log("id",this.state.advertiseId);
@@ -175,6 +176,8 @@ class AddCampaign extends React.Component{
 			.then((responseJson) => {
 				console.log(responseJson)	
 				if(responseJson.success === true){
+					 document.getElementById("cover-spin").style.display = "none";
+
 					this.setState({
 						advertiseData:[],
 						campaignTitle:"",
@@ -197,6 +200,7 @@ class AddCampaign extends React.Component{
 						maxAge: ""
 					})
 					// this.props.history.push('/dashboard/campaigns/campaignsList')
+					alert("Campaign created Successfully..")
 				}
 
 			})
@@ -225,6 +229,7 @@ class AddCampaign extends React.Component{
 					<div className="col-3"></div>
 					<div className="col-md-6">
 
+						<div id="cover-spin"></div>
 						<form>
 
 							<div className="form-group">
